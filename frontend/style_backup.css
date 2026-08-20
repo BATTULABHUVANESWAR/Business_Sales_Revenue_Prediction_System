@@ -1,0 +1,107 @@
+/* ============================= */
+/* Dashboard / Login / Register */
+/* ============================= */
+
+.dashboard-section,
+.history-section,
+.auth-section {
+    min-height: 75vh;
+    padding: 60px 8%;
+    text-align: center;
+}
+
+.dashboard-section h1,
+.history-section h1,
+.auth-card h1 {
+    font-size: 36px;
+    margin-bottom: 15px;
+}
+
+.dashboard-cards {
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+    flex-wrap: wrap;
+    margin-top: 40px;
+}
+
+.dashboard-card {
+    width: 280px;
+    padding: 30px;
+    border-radius: 15px;
+    background: white;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+.dashboard-card h2 {
+    margin-bottom: 15px;
+}
+
+.btn {
+    display: inline-block;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 8px;
+    text-decoration: none;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.auth-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.auth-card {
+    width: 400px;
+    padding: 40px;
+    border-radius: 18px;
+    background: white;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+}
+
+.auth-card form {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    gap: 10px;
+    margin-top: 25px;
+}
+
+.auth-card input {
+    padding: 13px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 15px;
+}
+
+.auth-card button {
+    margin-top: 15px;
+}
+
+.history-card {
+    margin: 40px auto;
+    max-width: 900px;
+    padding: 25px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    overflow-x: auto;
+}
+
+.history-card table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.history-card th,
+.history-card td {
+    padding: 15px;
+    border-bottom: 1px solid #ddd;
+}
+
+footer {
+    text-align: center;
+    padding: 25px;
+}
