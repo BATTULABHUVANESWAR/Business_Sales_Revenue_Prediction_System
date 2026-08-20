@@ -1,0 +1,51 @@
+
+# Python
+
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual Environment
+
+venv/
+.venv/
+env/
+ENV/
+
+# Environment Variables
+
+.env
+.env.*
+
+# IDE / Editor
+
+.vscode/
+.idea/
+
+# Jupyter
+
+.ipynb_checkpoints/
+
+# Logs
+
+*.log
+
+# OS Files
+
+.DS_Store
+Thumbs.db
+
+# Frontend / Node
+
+node_modules/
+dist/
+build/
+
+# Generated Processed Data
+
+data/processed/
+
+# Temporary Files
+
+*.tmp
+*.temp
