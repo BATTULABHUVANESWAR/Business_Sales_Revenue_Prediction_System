@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Business Sales Prediction System</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- Navigation Bar -->
+    <header class="navbar">
+        <div class="logo">
+            📈 SalesPredict
+        </div>
+
+        <nav>
+    <a href="index.html">Home</a>
+    <a href="predict.html">Predict</a>
+    <a href="about.html">About</a>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="history.html">History</a>
+    <a href="login.html">Login</a>
+    <a href="register.html">Register</a>
+</nav>
+    </header>
+
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+
+        <div class="hero-content">
+
+            <p class="tag">MACHINE LEARNING • SALES FORECASTING</p>
+
+            <h1>
+                Business Sales &
+                <span>Revenue Prediction</span>
+            </h1>
+
+            <p class="hero-description">
+                Predict future weekly sales using business,
+                market, promotional and time-based factors.
+            </p>
+
+            <a href="#predict" class="primary-button">
+                Start Prediction →
+            </a>
+
+        </div>
+
+    </section>
+
+
+    <!-- Prediction Section -->
+    <section id="predict" class="prediction-section">
+
+        <div class="section-heading">
+            <p class="small-title">PREDICTION</p>
+
+            <h2>Enter Business Details</h2>
+
+            <p>
+                Provide the required business and market information
+                to predict future weekly sales.
+            </p>
+        </div>
+
+
+        <form id="predictionForm">
+
+            <!-- Business Details -->
+            <div class="form-card">
+
+                <h3>Business Details</h3>
+
+                <div class="form-grid">
+
+                    <div class="input-group">
+                        <label for="store">Store</label>
+                        <input
+                            type="number"
+                            id="store"
+                            name="store"
+                            placeholder="Enter store number"
+                            required
+                        >
+                    </div>
+
+                    <div class="input-group">
+                        <label for="dept">Department</label>
+                        <input
+                            type="number"
+                            id="dept"
+                            name="dept"
+                            placeholder="Enter department"
+                            required
+                        >
+                    </div>
+
+                    <div class="input-group">
+                        <label for="type">Store Type</label>
+                        <select id="type" name="type" required>
+                            <option value="">Select type</option>
+                            <option value="A">Type A</option>
+                            <option value="B">Type B</option>
+                            <option value="C">Type C</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="size">Store Size</label>
+                        <input
+                            type="number"
+                            id="size"
+                            name="size"
+                            placeholder="Enter store size"
+                            required
+                        >
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- Market Details -->
+            <div class="form-card">
+
+                <h3>Market & Economic Details</h3>
+
+                <div class="form-grid">
+
+                    <div class="input-group">
+                        <label for="temperature">Temperature</label>
+                        <input
+                            type="number"
+                            step="any"
+                            id="temperature"
+                            name="temperature"
+                            placeholder="e.g. 75.5"
+                            required
+                        >
+                    </div>
+
+                    <div class="input-group">
+                        <label for="fuel_price">Fuel Price</label>
+                        <input
+                            type="number"
+                            step="any"
+                            id="fuel_price"
+                            name="fuel_price"
+                            placeholder="e.g. 3.20"
+                            required
+                        >
+                    </div>
+
+                    <div class="input-group">
+                        <label for="cpi">CPI</label>
+                        <input
+                            type="number"
+                            step="any"
+                            id="cpi"
+                            name="cpi"
+                            placeholder="Enter CPI"
+                            required
+                        >
+                    </div>
+
+                    <div class="input-group">
+                        <label for="unemployment">Unemployment</label>
+                        <input
+                            type="number"
+                            step="any"
+                            id="unemployment"
+                            name="unemployment"
+                            placeholder="Enter unemployment"
+                            required
+                        >
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- Promotion Details -->
+            <div class="form-card">
+
+                <h3>Promotional Details</h3>
+
+                <div class="form-grid">
+
+                    <div class="input-group">
+                        <label for="markdown1">MarkDown 1</label>
+                        <input type="number" step="any" id="markdown1" name="markdown1">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="markdown2">MarkDown 2</label>
+                        <input type="number" step="any" id="markdown2" name="markdown2">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="markdown3">MarkDown 3</label>
+                        <input type="number" step="any" id="markdown3" name="markdown3">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="markdown4">MarkDown 4</label>
+                        <input type="number" step="any" id="markdown4" name="markdown4">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="markdown5">MarkDown 5</label>
+                        <input type="number" step="any" id="markdown5" name="markdown5">
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- Time Details -->
+            <div class="form-card">
+
+                <h3>Time & Holiday Details</h3>
+
+                <div class="form-grid">
+
+                    <div class="input-group">
+                        <label for="holiday">Is Holiday?</label>
+
+                        <select id="holiday" name="holiday" required>
+                            <option value="">Select</option>
+                            <option value="1">Yes</option>
+                            <option value="0">No</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="year">Year</label>
+                        <input
+                            type="number"
+                            id="year"
+                            name="year"
+                            placeholder="e.g. 2012"
+                            required
+                        >
+                    </div>
+
+                    <div class="input-group">
+                        <label for="month">Month</label>
+                        <input
+                            type="number"
+                            min="1"
+                            max="12"
+                            id="month"
+                            name="month"
+                            placeholder="1 - 12"
+                            required
+                        >
+                    </div>
+
+                    <div class="input-group">
+                        <label for="week">Week</label>
+                        <input
+                            type="number"
+                            min="1"
+                            max="53"
+                            id="week"
+                            name="week"
+                            placeholder="1 - 53"
+                            required
+                        >
+                    </div>
+
+                    <div class="input-group">
+                        <label for="quarter">Quarter</label>
+                        <select id="quarter" name="quarter" required>
+                            <option value="">Select quarter</option>
+                            <option value="1">Q1</option>
+                            <option value="2">Q2</option>
+                            <option value="3">Q3</option>
+                            <option value="4">Q4</option>
+                        </select>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- Prediction Button -->
+            <div class="predict-area">
+
+                <button type="submit" class="predict-button">
+                    Predict Weekly Sales
+                </button>
+
+                <p>
+                    The trained machine learning model will generate
+                    the predicted future weekly sales value.
+                </p>
+
+            </div>
+
+        </form>
+
+    </section>
+
+
+    <!-- Result Section -->
+    <section class="result-section" id="result">
+
+        <div class="result-card">
+
+            <p class="small-title">PREDICTION RESULT</p>
+
+            <h2>Predicted Weekly Sales</h2>
+
+            <div class="result-value">
+                ₹ <span id="predictionValue">--</span>
+            </div>
+
+            <p id="resultMessage">
+                Your prediction will appear here after submitting
+                the business details.
+            </p>
+
+        </div>
+
+    </section>
+
+
+    <!-- About Section -->
+    <section id="about" class="about-section">
+
+        <div class="section-heading">
+
+            <p class="small-title">ABOUT THE PROJECT</p>
+
+            <h2>Business Sales & Revenue Prediction System</h2>
+
+            <p>
+                This machine learning system predicts future weekly
+                sales using historical business, promotional,
+                economic and time-based information.
+            </p>
+
+        </div>
+
+        <div class="about-grid">
+
+            <div class="about-card">
+                <h3>Dataset</h3>
+                <p>
+                    Historical store-level sales and business information.
+                </p>
+            </div>
+
+            <div class="about-card">
+                <h3>Machine Learning</h3>
+                <p>
+                    A trained ML regression model will be used
+                    to predict future weekly sales.
+                </p>
+            </div>
+
+            <div class="about-card">
+                <h3>Target</h3>
+                <p>
+                    Predicted future Weekly Sales value.
+                </p>
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- Footer -->
+    <footer>
+
+        <p>
+            Business Sales & Revenue Prediction System
+        </p>
+
+        <p>
+            Machine Learning Capstone Project
+        </p>
+
+    </footer>
+
+
+    <script src="script.js"></script>
+
+</body>
+</html>
