@@ -1,62 +1,158 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Login - SalesPredict</title>
+
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<header class="navbar">
-    <div class="logo">📈 SalesPredict</div>
+    <header class="navbar">
 
-    <nav>
-        <a href="/">Home</a>
-        <a href="/#predict">Predict</a>
-        <a href="/#about">About</a>
-        <a href="/dashboard.html">Dashboard</a>
-        <a href="/history.html">History</a>
-        <a href="/login.html">Login</a>
-        <a href="/register.html">Register</a>
-    </nav>
-</header>
+        <div class="logo">
+            📈 SalesPredict
+        </div>
 
-<main class="auth-section">
-
-    <div class="auth-card">
-
-        <h1>🔐 Login</h1>
-
-        <p>Login to access your SalesPredict dashboard.</p>
-
-        <form>
-
-            <label>Email</label>
-            <input type="email" placeholder="Enter your email" required>
-
-            <label>Password</label>
-            <input type="password" placeholder="Enter your password" required>
-
-            <button type="submit" class="btn">
-                Login
-            </button>
-
-        </form>
-
-        <p>
-            Don't have an account?
+        <nav>
+            <a href="/">Home</a>
+            <a href="/#predict">Predict</a>
+            <a href="/#about">About</a>
+            <a href="/dashboard.html">Dashboard</a>
+            <a href="/history.html">History</a>
+            <a href="/login.html">Login</a>
             <a href="/register.html">Register</a>
+        </nav>
+
+    </header>
+
+
+    <main class="auth-section">
+
+        <div class="auth-card">
+
+            <h1>🔐 Login</h1>
+
+            <p>
+                Login to access your SalesPredict dashboard.
+            </p>
+
+            <form id="loginForm">
+
+                <label for="email">Email</label>
+
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    placeholder="Enter your email"
+                    required
+                >
+
+                <label for="password">Password</label>
+
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="Enter your password"
+                    required
+                >
+
+                <button type="submit" class="btn">
+                    Login
+                </button>
+
+            </form>
+
+            <p>
+                Don't have an account?
+                <a href="/register.html">Register</a>
+            </p>
+
+        </div>
+
+    </main>
+
+
+    <footer>
+        <p>
+            Business Sales &amp; Revenue Prediction System
         </p>
+    </footer>
 
-    </div>
 
-</main>
+    <script>
 
-<footer>
-    <p>Business Sales & Revenue Prediction System</p>
-</footer>
+        document
+            .getElementById("loginForm")
+            .addEventListener("submit", async function(event) {
+
+                event.preventDefault();
+
+                const email =
+                    document.getElementById("email").value.trim();
+
+                const password =
+                    document.getElementById("password").value;
+
+                try {
+
+                    const response = await fetch("/api/login", {
+
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+
+                        body: JSON.stringify({
+                            email: email,
+                            password: password
+                        })
+
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+
+                        sessionStorage.setItem(
+                            "isLoggedIn",
+                            "true"
+                        );
+
+                        window.location.href =
+                            "/dashboard.html";
+
+                    } else {
+
+                        alert(result.message);
+
+                        if (response.status === 404) {
+                            window.location.href =
+                                "/register.html";
+                        }
+
+                    }
+
+                } catch (error) {
+
+                    console.error(error);
+
+                    alert(
+                        "Unable to connect to server."
+                    );
+
+                }
+
+            });
+
+    </script>
 
 </body>
 </html>
