@@ -14,7 +14,7 @@ FRONTEND_FOLDER = os.path.abspath(
 # Home
 @app.route("/")
 def home():
-    return send_from_directory(FRONTEND_FOLDER, "index.html")
+    return send_from_directory(FRONTEND_FOLDER, "login.html")
 
 
 # Serve all frontend files: CSS, JS, HTML
