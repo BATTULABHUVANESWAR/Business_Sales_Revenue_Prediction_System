@@ -1,4 +1,23 @@
-const API_BASE_URL = "http://127.0.0.1:5000";
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://127.0.0.1:5000";
+
+async function handleResponse(response) {
+  if (!response.ok) {
+    let errorMessage = `Request failed with status ${response.status}`;
+
+    try {
+      const data = await response.json();
+      errorMessage = data.message || errorMessage;
+    } catch {
+      // Keep default error message
+    }
+
+    throw new Error(errorMessage);
+  }
+
+  return response.json();
+}
+
 
 export async function loginUser(email, password) {
   const response = await fetch(`${API_BASE_URL}/api/login`, {
@@ -12,8 +31,9 @@ export async function loginUser(email, password) {
     }),
   });
 
-  return await response.json();
+  return handleResponse(response);
 }
+
 
 export async function registerUser(email, password) {
   const response = await fetch(`${API_BASE_URL}/api/register`, {
@@ -27,8 +47,9 @@ export async function registerUser(email, password) {
     }),
   });
 
-  return await response.json();
+  return handleResponse(response);
 }
+
 
 export async function predictSales(predictionData) {
   const response = await fetch(`${API_BASE_URL}/api/predict`, {
@@ -39,23 +60,25 @@ export async function predictSales(predictionData) {
     body: JSON.stringify(predictionData),
   });
 
-  return await response.json();
+  return handleResponse(response);
 }
+
 
 export async function getPredictionHistory(email) {
   const response = await fetch(
     `${API_BASE_URL}/api/history?email=${encodeURIComponent(email)}`
   );
 
-  return await response.json();
+  return handleResponse(response);
 }
+
 
 export async function getDashboardStats(email) {
   const response = await fetch(
     `${API_BASE_URL}/api/dashboard?email=${encodeURIComponent(email)}`
   );
 
-  return await response.json();
+  return handleResponse(response);
 }
 
 
@@ -64,13 +87,14 @@ export async function getModelMetrics() {
     `${API_BASE_URL}/api/model-metrics`
   );
 
-  return await response.json();
+  return handleResponse(response);
 }
+
 
 export async function getSalesTrend() {
   const response = await fetch(
     `${API_BASE_URL}/api/sales-trend`
   );
 
-  return await response.json();
+  return handleResponse(response);
 }
