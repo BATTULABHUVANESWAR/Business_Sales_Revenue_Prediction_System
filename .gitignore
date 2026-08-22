@@ -92,3 +92,6 @@ Thumbs.db
 data/processed/*.csv
 model.joblib
 model_metrics.joblib
+
+backend/model/model.joblib
+backend/model/model_metrics.joblib
