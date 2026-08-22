@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_cors import CORS
 
@@ -13,6 +13,7 @@ import joblib
 # ============================================================
 
 app = Flask(__name__)
+
 CORS(app)
 
 
@@ -26,15 +27,16 @@ BASE_DIR = os.path.dirname(
     )
 )
 
-FRONTEND_FOLDER = os.path.join(
-    BASE_DIR,
-    "frontend"
-)
 
 DATABASE = os.path.join(
     BASE_DIR,
     "users.db"
 )
+
+
+# ------------------------------------------------------------
+# ML MODEL
+# ------------------------------------------------------------
 
 MODEL_PATH = os.path.join(
     BASE_DIR,
@@ -42,13 +44,25 @@ MODEL_PATH = os.path.join(
     "model.joblib"
 )
 
+
 METRICS_PATH = os.path.join(
     BASE_DIR,
     "model",
     "model_metrics.joblib"
 )
 
-DATA_PATH = os.path.join(
+
+# ------------------------------------------------------------
+# HISTORICAL DATA
+#
+# Used for prediction features:
+# Lag_1, Lag_2, Lag_4,
+# Rolling_Mean_4, Rolling_Mean_8,
+# Temperature, Fuel_Price, CPI,
+# Unemployment, Type, Size
+# ------------------------------------------------------------
+
+HISTORICAL_DATA_PATH = os.path.join(
     BASE_DIR,
     "data",
     "processed",
@@ -56,22 +70,43 @@ DATA_PATH = os.path.join(
 )
 
 
+# ------------------------------------------------------------
+# SALES TREND DATA
+#
+# Small dataset used only by homepage graph.
+# ------------------------------------------------------------
+
+SALES_TREND_PATH = os.path.join(
+    BASE_DIR,
+    "data",
+    "sales_trend.csv"
+)
+
+
 # ============================================================
-# LOAD MODEL
+# LOAD ML MODEL
 # ============================================================
 
 try:
 
-    model = joblib.load(MODEL_PATH)
+    model = joblib.load(
+        MODEL_PATH
+    )
 
-    print("✓ ML model loaded successfully.")
+    print(
+        "✓ ML model loaded successfully."
+    )
 
 except Exception as e:
 
-    print("✗ Failed to load ML model:")
+    print(
+        "✗ Failed to load ML model:"
+    )
+
     print(e)
 
     model = None
+
 
 # ============================================================
 # LOAD MODEL METRICS
@@ -83,14 +118,20 @@ try:
         METRICS_PATH
     )
 
-    print("✓ Model metrics loaded successfully.")
+    print(
+        "✓ Model metrics loaded successfully."
+    )
 
 except Exception as e:
 
-    print("✗ Failed to load model metrics:")
+    print(
+        "✗ Failed to load model metrics:"
+    )
+
     print(e)
 
     model_metrics = {}
+
 
 # ============================================================
 # LOAD HISTORICAL DATA
@@ -98,29 +139,29 @@ except Exception as e:
 
 try:
 
-    sales_data = pd.read_csv(DATA_PATH)
-
-    sales_data["Date"] = pd.to_datetime(
-        sales_data["Date"],
-        errors="coerce"
+    sales_data = pd.read_csv(
+        HISTORICAL_DATA_PATH
     )
 
-    sales_data = sales_data.dropna(
-        subset=["Date"]
+    sales_data["Date"] = pd.to_datetime(
+        sales_data["Date"]
     )
 
     sales_data = sales_data.sort_values(
-        ["Store", "Dept", "Date"]
-    ).reset_index(drop=True)
+        "Date"
+    )
 
     print(
-        f"✓ Historical data loaded: "
-        f"{len(sales_data):,} records."
+        f"✓ Historical data loaded successfully. "
+        f"Rows: {len(sales_data):,}"
     )
 
 except Exception as e:
 
-    print("✗ Failed to load historical data:")
+    print(
+        "✗ Failed to load historical data:"
+    )
+
     print(e)
 
     sales_data = pd.DataFrame()
@@ -137,7 +178,6 @@ def get_db():
         timeout=10
     )
 
-    # Wait up to 10 seconds if SQLite is temporarily locked
     conn.execute(
         "PRAGMA busy_timeout = 10000"
     )
@@ -160,8 +200,7 @@ def init_db():
         cursor = conn.cursor()
 
         # ----------------------------------------------------
-        # Enable WAL mode
-        # Helps prevent "database is locked" during reads/writes
+        # WAL MODE
         # ----------------------------------------------------
 
         cursor.execute(
@@ -227,7 +266,9 @@ def init_db():
 
         conn.commit()
 
-        print("✓ Database initialized successfully.")
+        print(
+            "✓ Database initialized successfully."
+        )
 
     except Exception as e:
 
@@ -259,7 +300,12 @@ def get_historical_features(
         prediction_date
     )
 
+    # --------------------------------------------------------
+    # Check historical data
+    # --------------------------------------------------------
+
     if sales_data.empty:
+
         return None
 
     # --------------------------------------------------------
@@ -275,17 +321,21 @@ def get_historical_features(
     )
 
     if history.empty:
+
         return None
 
-    sales = history["Weekly_Sales"]
+    # --------------------------------------------------------
+    # Sales series
+    # --------------------------------------------------------
+
+    sales = history[
+        "Weekly_Sales"
+    ]
 
     latest = history.iloc[-1]
 
     # --------------------------------------------------------
     # Lag features
-    #
-    # Since the historical data is sorted chronologically,
-    # these represent previous observed sales records.
     # --------------------------------------------------------
 
     lag_1 = float(
@@ -318,9 +368,6 @@ def get_historical_features(
 
     # --------------------------------------------------------
     # Contextual features
-    #
-    # Use the latest historical values instead of
-    # hard-coded assumptions.
     # --------------------------------------------------------
 
     return {
@@ -341,22 +388,34 @@ def get_historical_features(
             rolling_mean_8,
 
         "Temperature":
-            float(latest["Temperature"]),
+            float(
+                latest["Temperature"]
+            ),
 
         "Fuel_Price":
-            float(latest["Fuel_Price"]),
+            float(
+                latest["Fuel_Price"]
+            ),
 
         "CPI":
-            float(latest["CPI"]),
+            float(
+                latest["CPI"]
+            ),
 
         "Unemployment":
-            float(latest["Unemployment"]),
+            float(
+                latest["Unemployment"]
+            ),
 
         "Type":
-            str(latest["Type"]),
+            str(
+                latest["Type"]
+            ),
 
         "Size":
-            int(latest["Size"])
+            int(
+                latest["Size"]
+            )
     }
 
 
@@ -383,24 +442,33 @@ def user_exists(email):
             (email,)
         )
 
-        return cursor.fetchone() is not None
+        return (
+            cursor.fetchone()
+            is not None
+        )
 
     finally:
 
         if conn:
+
             conn.close()
 
 
 # ============================================================
-# FRONTEND
+# HOME / ROOT
 # ============================================================
 
 @app.route("/")
 def home():
 
     return jsonify({
-        "success": True,
-        "message": "Sales Prediction API is running."
+
+        "success":
+            True,
+
+        "message":
+            "Sales Prediction API is running."
+
     })
 
 
@@ -408,14 +476,26 @@ def home():
 # HEALTH CHECK
 # ============================================================
 
-@app.route("/api/health", methods=["GET"])
+@app.route(
+    "/api/health",
+    methods=["GET"]
+)
 def health():
 
     return jsonify({
-        "success": True,
-        "message": "Backend is running.",
-        "model_loaded": model is not None,
-        "historical_data_loaded": not sales_data.empty
+
+        "success":
+            True,
+
+        "message":
+            "Backend is running.",
+
+        "model_loaded":
+            model is not None,
+
+        "historical_data_loaded":
+            not sales_data.empty
+
     })
 
 
@@ -438,16 +518,27 @@ def register():
         if not data:
 
             return jsonify({
-                "success": False,
-                "message": "No registration data received."
+
+                "success":
+                    False,
+
+                "message":
+                    "No registration data received."
+
             }), 400
 
         email = str(
-            data.get("email", "")
+            data.get(
+                "email",
+                ""
+            )
         ).strip().lower()
 
         password = str(
-            data.get("password", "")
+            data.get(
+                "password",
+                ""
+            )
         )
 
         # ----------------------------------------------------
@@ -457,31 +548,47 @@ def register():
         if not email:
 
             return jsonify({
-                "success": False,
-                "message": "Email is required."
+
+                "success":
+                    False,
+
+                "message":
+                    "Email is required."
+
             }), 400
 
         if not password:
 
             return jsonify({
-                "success": False,
-                "message": "Password is required."
+
+                "success":
+                    False,
+
+                "message":
+                    "Password is required."
+
             }), 400
 
         if len(password) < 4:
 
             return jsonify({
-                "success": False,
+
+                "success":
+                    False,
+
                 "message":
                     "Password must contain at least 4 characters."
+
             }), 400
 
         # ----------------------------------------------------
         # HASH PASSWORD
         # ----------------------------------------------------
 
-        password_hash = generate_password_hash(
-            password
+        password_hash = (
+            generate_password_hash(
+                password
+            )
         )
 
         # ----------------------------------------------------
@@ -505,14 +612,20 @@ def register():
             (email,)
         )
 
-        existing_user = cursor.fetchone()
+        existing_user = (
+            cursor.fetchone()
+        )
 
         if existing_user:
 
             return jsonify({
-                "success": False,
+
+                "success":
+                    False,
+
                 "message":
                     "User already exists. Please login."
+
             }), 409
 
         # ----------------------------------------------------
@@ -542,7 +655,8 @@ def register():
 
         return jsonify({
 
-            "success": True,
+            "success":
+                True,
 
             "message":
                 "Registration successful. Please login."
@@ -552,17 +666,23 @@ def register():
     except sqlite3.IntegrityError:
 
         if conn:
+
             conn.rollback()
 
         return jsonify({
-            "success": False,
+
+            "success":
+                False,
+
             "message":
                 "An account with this email already exists."
+
         }), 409
 
     except sqlite3.OperationalError as e:
 
         if conn:
+
             conn.rollback()
 
         print(
@@ -571,14 +691,19 @@ def register():
         )
 
         return jsonify({
-            "success": False,
+
+            "success":
+                False,
+
             "message":
                 "Database is currently busy. Please try again."
+
         }), 503
 
     except Exception as e:
 
         if conn:
+
             conn.rollback()
 
         print(
@@ -587,14 +712,19 @@ def register():
         )
 
         return jsonify({
-            "success": False,
+
+            "success":
+                False,
+
             "message":
                 "Registration failed."
+
         }), 500
 
     finally:
 
         if conn:
+
             conn.close()
 
 
@@ -617,25 +747,39 @@ def login():
         if not data:
 
             return jsonify({
-                "success": False,
+
+                "success":
+                    False,
+
                 "message":
                     "No login data received."
+
             }), 400
 
         email = str(
-            data.get("email", "")
+            data.get(
+                "email",
+                ""
+            )
         ).strip().lower()
 
         password = str(
-            data.get("password", "")
+            data.get(
+                "password",
+                ""
+            )
         )
 
         if not email or not password:
 
             return jsonify({
-                "success": False,
+
+                "success":
+                    False,
+
                 "message":
                     "Please enter email and password."
+
             }), 400
 
         # ----------------------------------------------------
@@ -662,9 +806,13 @@ def login():
         if not user:
 
             return jsonify({
-                "success": False,
+
+                "success":
+                    False,
+
                 "message":
                     "Account not found. Please register first."
+
             }), 404
 
         user_id = user[0]
@@ -679,34 +827,42 @@ def login():
 
         try:
 
-            password_valid = check_password_hash(
-                stored_password,
-                password
+            password_valid = (
+                check_password_hash(
+                    stored_password,
+                    password
+                )
             )
 
         except Exception:
 
-            # Compatibility with any old plain-text account
             password_valid = (
-                stored_password == password
+                stored_password
+                == password
             )
 
         if not password_valid:
 
             return jsonify({
-                "success": False,
+
+                "success":
+                    False,
+
                 "message":
                     "Incorrect password."
+
             }), 401
 
         # ----------------------------------------------------
-        # UPGRADE OLD PASSWORD IF NECESSARY
+        # UPGRADE OLD PASSWORD
         # ----------------------------------------------------
 
         if stored_password == password:
 
             new_password_hash = (
-                generate_password_hash(password)
+                generate_password_hash(
+                    password
+                )
             )
 
             cursor.execute(
@@ -725,7 +881,8 @@ def login():
 
         return jsonify({
 
-            "success": True,
+            "success":
+                True,
 
             "message":
                 "Login successful.",
@@ -741,6 +898,7 @@ def login():
     except Exception as e:
 
         if conn:
+
             conn.rollback()
 
         print(
@@ -749,14 +907,19 @@ def login():
         )
 
         return jsonify({
-            "success": False,
+
+            "success":
+                False,
+
             "message":
                 "Login failed."
+
         }), 500
 
     finally:
 
         if conn:
+
             conn.close()
 
 
@@ -779,9 +942,13 @@ def predict():
         if not data:
 
             return jsonify({
-                "success": False,
+
+                "success":
+                    False,
+
                 "message":
                     "No prediction data received."
+
             }), 400
 
         # ====================================================
@@ -789,10 +956,15 @@ def predict():
         # ====================================================
 
         email = str(
-            data.get("email", "")
+            data.get(
+                "email",
+                ""
+            )
         ).strip().lower()
 
-        store = data.get("store")
+        store = data.get(
+            "store"
+        )
 
         department = data.get(
             "department"
@@ -808,11 +980,31 @@ def predict():
         )
 
         markdown_values = [
-            data.get("markdown1", 0) or 0,
-            data.get("markdown2", 0) or 0,
-            data.get("markdown3", 0) or 0,
-            data.get("markdown4", 0) or 0,
-            data.get("markdown5", 0) or 0
+
+            data.get(
+                "markdown1",
+                0
+            ) or 0,
+
+            data.get(
+                "markdown2",
+                0
+            ) or 0,
+
+            data.get(
+                "markdown3",
+                0
+            ) or 0,
+
+            data.get(
+                "markdown4",
+                0
+            ) or 0,
+
+            data.get(
+                "markdown5",
+                0
+            ) or 0
         ]
 
         # ====================================================
@@ -822,17 +1014,25 @@ def predict():
         if not email:
 
             return jsonify({
-                "success": False,
+
+                "success":
+                    False,
+
                 "message":
                     "User email is required."
+
             }), 400
 
         if not user_exists(email):
 
             return jsonify({
-                "success": False,
+
+                "success":
+                    False,
+
                 "message":
                     "User account not found. Please login."
+
             }), 401
 
         # ====================================================
@@ -845,9 +1045,13 @@ def predict():
         ):
 
             return jsonify({
-                "success": False,
+
+                "success":
+                    False,
+
                 "message":
                     "Please enter a Store."
+
             }), 400
 
         if (
@@ -856,14 +1060,20 @@ def predict():
         ):
 
             return jsonify({
-                "success": False,
+
+                "success":
+                    False,
+
                 "message":
                     "Please enter a Department."
+
             }), 400
 
         try:
 
-            store = int(store)
+            store = int(
+                store
+            )
 
             department = int(
                 department
@@ -875,25 +1085,37 @@ def predict():
         ):
 
             return jsonify({
-                "success": False,
+
+                "success":
+                    False,
+
                 "message":
                     "Store and Department must be valid numbers."
+
             }), 400
 
         if store <= 0:
 
             return jsonify({
-                "success": False,
+
+                "success":
+                    False,
+
                 "message":
                     "Store must be greater than 0."
+
             }), 400
 
         if department <= 0:
 
             return jsonify({
-                "success": False,
+
+                "success":
+                    False,
+
                 "message":
                     "Department must be greater than 0."
+
             }), 400
 
         # ====================================================
@@ -912,17 +1134,25 @@ def predict():
         ):
 
             return jsonify({
-                "success": False,
+
+                "success":
+                    False,
+
                 "message":
                     "Holiday must be either 0 or 1."
+
             }), 400
 
         if holiday not in [0, 1]:
 
             return jsonify({
-                "success": False,
+
+                "success":
+                    False,
+
                 "message":
                     "Holiday must be either No or Yes."
+
             }), 400
 
         # ====================================================
@@ -932,8 +1162,12 @@ def predict():
         try:
 
             markdown_values = [
+
                 float(value)
-                for value in markdown_values
+
+                for value
+                in markdown_values
+
             ]
 
         except (
@@ -942,9 +1176,13 @@ def predict():
         ):
 
             return jsonify({
-                "success": False,
+
+                "success":
+                    False,
+
                 "message":
                     "Markdown values must be valid numbers."
+
             }), 400
 
         if any(
@@ -953,9 +1191,13 @@ def predict():
         ):
 
             return jsonify({
-                "success": False,
+
+                "success":
+                    False,
+
                 "message":
                     "Markdown values cannot be negative."
+
             }), 400
 
         (
@@ -973,9 +1215,13 @@ def predict():
         if not prediction_date:
 
             return jsonify({
-                "success": False,
+
+                "success":
+                    False,
+
                 "message":
                     "Please select a Prediction Date."
+
             }), 400
 
         try:
@@ -988,9 +1234,13 @@ def predict():
         except Exception:
 
             return jsonify({
-                "success": False,
+
+                "success":
+                    False,
+
                 "message":
                     "Please provide a valid prediction date."
+
             }), 400
 
         # ====================================================
@@ -1020,9 +1270,29 @@ def predict():
         if model is None:
 
             return jsonify({
-                "success": False,
+
+                "success":
+                    False,
+
                 "message":
                     "ML model is not available."
+
+            }), 500
+
+        # ====================================================
+        # HISTORICAL DATA CHECK
+        # ====================================================
+
+        if sales_data.empty:
+
+            return jsonify({
+
+                "success":
+                    False,
+
+                "message":
+                    "Historical sales data is not available."
+
             }), 500
 
         # ====================================================
@@ -1040,11 +1310,15 @@ def predict():
         if historical_features is None:
 
             return jsonify({
-                "success": False,
+
+                "success":
+                    False,
+
                 "message":
                     "No historical sales data found "
                     "for this Store and Department "
                     "before the selected date."
+
             }), 400
 
         # ====================================================
@@ -1164,10 +1438,6 @@ def predict():
         predicted_sales = float(
             prediction[0]
         )
-
-        # ----------------------------------------------------
-        # Prevent negative sales prediction
-        # ----------------------------------------------------
 
         predicted_sales = max(
             0.0,
@@ -1299,11 +1569,13 @@ def predict():
                         "Size"
                     ]
             }
+
         })
 
     except sqlite3.OperationalError as e:
 
         if conn:
+
             conn.rollback()
 
         print(
@@ -1312,14 +1584,19 @@ def predict():
         )
 
         return jsonify({
-            "success": False,
+
+            "success":
+                False,
+
             "message":
                 "Database is currently busy. Please try again."
+
         }), 503
 
     except Exception as e:
 
         if conn:
+
             conn.rollback()
 
         print(
@@ -1328,14 +1605,19 @@ def predict():
         )
 
         return jsonify({
-            "success": False,
+
+            "success":
+                False,
+
             "message":
                 "Prediction failed. Please check the server logs."
+
         }), 500
 
     finally:
 
         if conn:
+
             conn.close()
 
 
@@ -1354,14 +1636,19 @@ def model_metrics_api():
         if not model_metrics:
 
             return jsonify({
-                "success": False,
+
+                "success":
+                    False,
+
                 "message":
                     "Model metrics are not available."
+
             }), 404
 
         return jsonify({
 
-            "success": True,
+            "success":
+                True,
 
             "best_model":
                 model_metrics.get(
@@ -1402,6 +1689,7 @@ def model_metrics_api():
                 model_metrics.get(
                     "total_rows"
                 )
+
         })
 
     except Exception as e:
@@ -1412,9 +1700,113 @@ def model_metrics_api():
         )
 
         return jsonify({
-            "success": False,
+
+            "success":
+                False,
+
             "message":
                 "Unable to load model metrics."
+
+        }), 500
+
+
+# ============================================================
+# SALES TREND API
+# ============================================================
+
+@app.route(
+    "/api/sales-trend",
+    methods=["GET"]
+)
+def sales_trend():
+
+    try:
+
+        # ----------------------------------------------------
+        # Check file
+        # ----------------------------------------------------
+
+        if not os.path.exists(
+            SALES_TREND_PATH
+        ):
+
+            return jsonify({
+
+                "success":
+                    False,
+
+                "message":
+                    "Sales trend data is not available."
+
+            }), 404
+
+        # ----------------------------------------------------
+        # Load tiny trend dataset
+        # ----------------------------------------------------
+
+        df = pd.read_csv(
+            SALES_TREND_PATH
+        )
+
+        # ----------------------------------------------------
+        # Convert date
+        # ----------------------------------------------------
+
+        df["Date"] = pd.to_datetime(
+            df["Date"]
+        )
+
+        df = df.sort_values(
+            "Date"
+        )
+
+        # ----------------------------------------------------
+        # Return data
+        # ----------------------------------------------------
+
+        sales_data_response = []
+
+        for _, row in df.iterrows():
+
+            sales_data_response.append({
+
+                "date":
+                    row["Date"].strftime(
+                        "%Y-%m-%d"
+                    ),
+
+                "sales":
+                    float(
+                        row["Sales"]
+                    )
+
+            })
+
+        return jsonify({
+
+            "success":
+                True,
+
+            "sales":
+                sales_data_response
+
+        })
+
+    except Exception as e:
+
+        print(
+            "Sales trend error:",
+            e
+        )
+
+        return jsonify({
+
+            "success":
+                False,
+
+            "message":
+                str(e)
+
         }), 500
 
 
@@ -1442,9 +1834,13 @@ def history():
         if not email:
 
             return jsonify({
-                "success": False,
+
+                "success":
+                    False,
+
                 "message":
                     "User email is required."
+
             }), 400
 
         conn = get_db()
@@ -1483,6 +1879,7 @@ def history():
 
             "predictions":
                 predictions
+
         })
 
     except Exception as e:
@@ -1493,14 +1890,19 @@ def history():
         )
 
         return jsonify({
-            "success": False,
+
+            "success":
+                False,
+
             "message":
                 "Unable to load prediction history."
+
         }), 500
 
     finally:
 
         if conn:
+
             conn.close()
 
 
@@ -1528,9 +1930,13 @@ def dashboard():
         if not email:
 
             return jsonify({
-                "success": False,
+
+                "success":
+                    False,
+
                 "message":
                     "User email is required."
+
             }), 400
 
         conn = get_db()
@@ -1640,6 +2046,7 @@ def dashboard():
 
                 "created_at":
                     latest[5]
+
             }
 
         # ----------------------------------------------------
@@ -1662,6 +2069,7 @@ def dashboard():
 
             "latest_prediction":
                 latest_prediction
+
         })
 
     except Exception as e:
@@ -1672,99 +2080,22 @@ def dashboard():
         )
 
         return jsonify({
-            "success": False,
+
+            "success":
+                False,
+
             "message":
                 "Unable to load dashboard."
+
         }), 500
 
     finally:
 
         if conn:
+
             conn.close()
 
-# ============================================================
-# HISTORICAL SALES TREND API
-# ============================================================
 
-@app.route("/api/sales-trend", methods=["GET"])
-def sales_trend():
-
-    try:
-
-        # ----------------------------------------------------
-        # LOAD PROCESSED DATA
-        # ----------------------------------------------------
-
-        data_path = os.path.join(
-            BASE_DIR,
-            "data",
-            "processed",
-            "ml_ready.csv"
-        )
-
-        df = pd.read_csv(data_path)
-
-        # ----------------------------------------------------
-        # CONVERT DATE
-        # ----------------------------------------------------
-
-        df["Date"] = pd.to_datetime(
-            df["Date"]
-        )
-
-        # ----------------------------------------------------
-        # AGGREGATE SALES BY DATE
-        # ----------------------------------------------------
-
-        trend = (
-            df.groupby("Date", as_index=False)
-            ["Weekly_Sales"]
-            .sum()
-            .sort_values("Date")
-        )
-
-        # ----------------------------------------------------
-        # RETURN DATA
-        # ----------------------------------------------------
-
-        sales_data = []
-
-        for _, row in trend.iterrows():
-
-            sales_data.append({
-                "date": row["Date"].strftime(
-                    "%Y-%m-%d"
-                ),
-
-                "sales": float(
-                    row["Weekly_Sales"]
-                )
-            })
-
-        return jsonify({
-
-            "success": True,
-
-            "sales": sales_data
-
-        })
-
-    except Exception as e:
-
-        print(
-            "Sales trend error:",
-            e
-        )
-
-        return jsonify({
-
-            "success": False,
-
-            "message": str(e)
-
-        }), 500
-
-    
 # ============================================================
 # RUN
 # ============================================================
@@ -1772,16 +2103,44 @@ def sales_trend():
 if __name__ == "__main__":
 
     print()
-    print("============================================")
-    print("     SALES PREDICTION SYSTEM")
-    print("============================================")
-    print("Backend: http://127.0.0.1:5000")
-    print("Health:  http://127.0.0.1:5000/api/health")
-    print("============================================")
+
+    print(
+        "============================================"
+    )
+
+    print(
+        "     SALES PREDICTION SYSTEM"
+    )
+
+    print(
+        "============================================"
+    )
+
+    print(
+        "Backend: http://127.0.0.1:5000"
+    )
+
+    print(
+        "Health:  http://127.0.0.1:5000/api/health"
+    )
+
+    print(
+        "============================================"
+    )
+
     print()
 
     app.run(
+
         host="0.0.0.0",
-        port=int(os.environ.get("PORT", 5000)),
+
+        port=int(
+            os.environ.get(
+                "PORT",
+                5000
+            )
+        ),
+
         debug=False
+
     )
