@@ -15,7 +15,7 @@ from xgboost import XGBRegressor
 # 1. LOAD DATA
 # ============================================================
 
-df = pd.read_csv("data/processed/ml_ready.csv")
+df = pd.read_csv("../data/processed/ml_ready.csv")
 
 # Convert Date
 df["Date"] = pd.to_datetime(df["Date"])
@@ -206,8 +206,8 @@ print(results_df)
 # 8. SELECT BEST MODEL
 # ============================================================
 
-# Primary: lowest MAE
-# Secondary: lowest RMSE
+# Primary criterion: lowest MAE
+# Secondary criterion: lowest RMSE
 
 best_model_name = (
     results_df
@@ -226,13 +226,25 @@ print("====================================================")
 
 print("\nBest Model Metrics:")
 
-print("MAE :", results_df.loc[best_model_name, "MAE"])
-print("RMSE:", results_df.loc[best_model_name, "RMSE"])
-print("R2  :", results_df.loc[best_model_name, "R2"])
+best_mae = float(
+    results_df.loc[best_model_name, "MAE"]
+)
+
+best_rmse = float(
+    results_df.loc[best_model_name, "RMSE"]
+)
+
+best_r2 = float(
+    results_df.loc[best_model_name, "R2"]
+)
+
+print("MAE :", best_mae)
+print("RMSE:", best_rmse)
+print("R2  :", best_r2)
 
 
 # ============================================================
-# 9. SAVE BEST MODEL
+# 9. SAVE MODEL
 # ============================================================
 
 joblib.dump(
@@ -240,4 +252,79 @@ joblib.dump(
     "model.joblib"
 )
 
-print("\nModel saved successfully as: model.joblib")
+print(
+    "\nModel saved successfully as: model.joblib"
+)
+
+
+# ============================================================
+# 10. SAVE MODEL METRICS
+# ============================================================
+
+metrics = {
+
+    "best_model": best_model_name,
+
+    "MAE": best_mae,
+
+    "RMSE": best_rmse,
+
+    "R2": best_r2,
+
+    "models_compared": len(models),
+
+    "training_rows": len(X_train),
+
+    "testing_rows": len(X_test),
+
+    "total_rows": len(df)
+}
+
+joblib.dump(
+    metrics,
+    "model_metrics.joblib"
+)
+
+print(
+    "Model metrics saved successfully as: "
+    "model_metrics.joblib"
+)
+
+
+# ============================================================
+# 11. DISPLAY SUMMARY
+# ============================================================
+
+print("\n================ FINAL SUMMARY ================\n")
+
+print(
+    f"Best Model       : {best_model_name}"
+)
+
+print(
+    f"R² Score         : {best_r2:.4f}"
+)
+
+print(
+    f"R² Percentage    : {best_r2 * 100:.2f}%"
+)
+
+print(
+    f"MAE              : {best_mae:,.2f}"
+)
+
+print(
+    f"RMSE             : {best_rmse:,.2f}"
+)
+
+print(
+    f"Models Compared  : {len(models)}"
+)
+
+print(
+    f"Training Records : {len(X_train):,}"
+)
+
+print(
+    f"Testing Records  : {len(X_test):,}"
+)
