@@ -442,10 +442,10 @@ def user_exists(email):
             (email,)
         )
 
-        return (
-            cursor.fetchone()
-            is not None
-        )
+        user = cursor.fetchone()
+        print("Checking user: ",email)
+        print("User found: ",user)
+        print("Database: ",DATABASE)
 
     finally:
 
