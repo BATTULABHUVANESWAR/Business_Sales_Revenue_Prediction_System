@@ -27,16 +27,10 @@ BASE_DIR = os.path.dirname(
     )
 )
 
-
 DATABASE = os.path.join(
     BASE_DIR,
     "users.db"
 )
-
-
-# ------------------------------------------------------------
-# ML MODEL
-# ------------------------------------------------------------
 
 MODEL_PATH = os.path.join(
     BASE_DIR,
@@ -44,23 +38,11 @@ MODEL_PATH = os.path.join(
     "model.joblib"
 )
 
-
 METRICS_PATH = os.path.join(
     BASE_DIR,
     "model",
     "model_metrics.joblib"
 )
-
-
-# ------------------------------------------------------------
-# HISTORICAL DATA
-#
-# Used for prediction features:
-# Lag_1, Lag_2, Lag_4,
-# Rolling_Mean_4, Rolling_Mean_8,
-# Temperature, Fuel_Price, CPI,
-# Unemployment, Type, Size
-# ------------------------------------------------------------
 
 HISTORICAL_DATA_PATH = os.path.join(
     BASE_DIR,
@@ -68,13 +50,6 @@ HISTORICAL_DATA_PATH = os.path.join(
     "processed",
     "ml_ready.csv"
 )
-
-
-# ------------------------------------------------------------
-# SALES TREND DATA
-#
-# Small dataset used only by homepage graph.
-# ------------------------------------------------------------
 
 SALES_TREND_PATH = os.path.join(
     BASE_DIR,
@@ -88,23 +63,12 @@ SALES_TREND_PATH = os.path.join(
 # ============================================================
 
 try:
-
-    model = joblib.load(
-        MODEL_PATH
-    )
-
-    print(
-        "✓ ML model loaded successfully."
-    )
+    model = joblib.load(MODEL_PATH)
+    print("✓ ML model loaded successfully.")
 
 except Exception as e:
-
-    print(
-        "✗ Failed to load ML model:"
-    )
-
+    print("✗ Failed to load ML model:")
     print(e)
-
     model = None
 
 
@@ -113,23 +77,12 @@ except Exception as e:
 # ============================================================
 
 try:
-
-    model_metrics = joblib.load(
-        METRICS_PATH
-    )
-
-    print(
-        "✓ Model metrics loaded successfully."
-    )
+    model_metrics = joblib.load(METRICS_PATH)
+    print("✓ Model metrics loaded successfully.")
 
 except Exception as e:
-
-    print(
-        "✗ Failed to load model metrics:"
-    )
-
+    print("✗ Failed to load model metrics:")
     print(e)
-
     model_metrics = {}
 
 
@@ -158,10 +111,7 @@ try:
 
 except Exception as e:
 
-    print(
-        "✗ Failed to load historical data:"
-    )
-
+    print("✗ Failed to load historical data:")
     print(e)
 
     sales_data = pd.DataFrame()
@@ -199,17 +149,9 @@ def init_db():
 
         cursor = conn.cursor()
 
-        # ----------------------------------------------------
-        # WAL MODE
-        # ----------------------------------------------------
-
         cursor.execute(
             "PRAGMA journal_mode=WAL"
         )
-
-        # ----------------------------------------------------
-        # USERS
-        # ----------------------------------------------------
 
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS users (
@@ -222,10 +164,6 @@ def init_db():
 
             )
         """)
-
-        # ----------------------------------------------------
-        # PREDICTIONS
-        # ----------------------------------------------------
 
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS predictions (
@@ -248,10 +186,6 @@ def init_db():
             )
         """)
 
-        # ----------------------------------------------------
-        # INDEXES
-        # ----------------------------------------------------
-
         cursor.execute("""
             CREATE INDEX IF NOT EXISTS
             idx_predictions_email
@@ -266,9 +200,7 @@ def init_db():
 
         conn.commit()
 
-        print(
-            "✓ Database initialized successfully."
-        )
+        print("✓ Database initialized successfully.")
 
     except Exception as e:
 
@@ -300,17 +232,8 @@ def get_historical_features(
         prediction_date
     )
 
-    # --------------------------------------------------------
-    # Check historical data
-    # --------------------------------------------------------
-
     if sales_data.empty:
-
         return None
-
-    # --------------------------------------------------------
-    # Get previous records for same Store + Department
-    # --------------------------------------------------------
 
     history = sales_data[
         (sales_data["Store"] == int(store)) &
@@ -321,22 +244,11 @@ def get_historical_features(
     )
 
     if history.empty:
-
         return None
 
-    # --------------------------------------------------------
-    # Sales series
-    # --------------------------------------------------------
-
-    sales = history[
-        "Weekly_Sales"
-    ]
+    sales = history["Weekly_Sales"]
 
     latest = history.iloc[-1]
-
-    # --------------------------------------------------------
-    # Lag features
-    # --------------------------------------------------------
 
     lag_1 = float(
         sales.iloc[-1]
@@ -354,10 +266,6 @@ def get_historical_features(
         else sales.iloc[0]
     )
 
-    # --------------------------------------------------------
-    # Rolling features
-    # --------------------------------------------------------
-
     rolling_mean_4 = float(
         sales.tail(4).mean()
     )
@@ -366,20 +274,13 @@ def get_historical_features(
         sales.tail(8).mean()
     )
 
-    # --------------------------------------------------------
-    # Contextual features
-    # --------------------------------------------------------
-
     return {
 
-        "Lag_1":
-            lag_1,
+        "Lag_1": lag_1,
 
-        "Lag_2":
-            lag_2,
+        "Lag_2": lag_2,
 
-        "Lag_4":
-            lag_4,
+        "Lag_4": lag_4,
 
         "Rolling_Mean_4":
             rolling_mean_4,
@@ -437,25 +338,45 @@ def user_exists(email):
             """
             SELECT id
             FROM users
-            WHERE email = ?
+            WHERE LOWER(TRIM(email)) = ?
             """,
-            (email,)
+            (email.strip().lower(),)
         )
 
         user = cursor.fetchone()
-        print("Checking user: ",email)
-        print("User found: ",user)
-        print("Database: ",DATABASE)
+
+        # Debug information for Render logs
+        print(
+            f"Checking user: {email}"
+        )
+
+        print(
+            f"User found: {user}"
+        )
+
+        print(
+            f"Database: {DATABASE}"
+        )
+
+        return user is not None
+
+    except Exception as e:
+
+        print(
+            "User lookup error:",
+            e
+        )
+
+        return False
 
     finally:
 
         if conn:
-
             conn.close()
 
 
 # ============================================================
-# HOME / ROOT
+# HOME
 # ============================================================
 
 @app.route("/")
@@ -463,8 +384,7 @@ def home():
 
     return jsonify({
 
-        "success":
-            True,
+        "success": True,
 
         "message":
             "Sales Prediction API is running."
@@ -484,8 +404,7 @@ def health():
 
     return jsonify({
 
-        "success":
-            True,
+        "success": True,
 
         "message":
             "Backend is running.",
@@ -519,8 +438,7 @@ def register():
 
             return jsonify({
 
-                "success":
-                    False,
+                "success": False,
 
                 "message":
                     "No registration data received."
@@ -541,16 +459,11 @@ def register():
             )
         )
 
-        # ----------------------------------------------------
-        # VALIDATION
-        # ----------------------------------------------------
-
         if not email:
 
             return jsonify({
 
-                "success":
-                    False,
+                "success": False,
 
                 "message":
                     "Email is required."
@@ -561,8 +474,7 @@ def register():
 
             return jsonify({
 
-                "success":
-                    False,
+                "success": False,
 
                 "message":
                     "Password is required."
@@ -573,17 +485,12 @@ def register():
 
             return jsonify({
 
-                "success":
-                    False,
+                "success": False,
 
                 "message":
                     "Password must contain at least 4 characters."
 
             }), 400
-
-        # ----------------------------------------------------
-        # HASH PASSWORD
-        # ----------------------------------------------------
 
         password_hash = (
             generate_password_hash(
@@ -591,17 +498,9 @@ def register():
             )
         )
 
-        # ----------------------------------------------------
-        # DATABASE
-        # ----------------------------------------------------
-
         conn = get_db()
 
         cursor = conn.cursor()
-
-        # ----------------------------------------------------
-        # CHECK EXISTING USER
-        # ----------------------------------------------------
 
         cursor.execute(
             """
@@ -612,25 +511,18 @@ def register():
             (email,)
         )
 
-        existing_user = (
-            cursor.fetchone()
-        )
+        existing_user = cursor.fetchone()
 
         if existing_user:
 
             return jsonify({
 
-                "success":
-                    False,
+                "success": False,
 
                 "message":
                     "User already exists. Please login."
 
             }), 409
-
-        # ----------------------------------------------------
-        # CREATE USER
-        # ----------------------------------------------------
 
         cursor.execute(
             """
@@ -655,8 +547,7 @@ def register():
 
         return jsonify({
 
-            "success":
-                True,
+            "success": True,
 
             "message":
                 "Registration successful. Please login."
@@ -666,13 +557,11 @@ def register():
     except sqlite3.IntegrityError:
 
         if conn:
-
             conn.rollback()
 
         return jsonify({
 
-            "success":
-                False,
+            "success": False,
 
             "message":
                 "An account with this email already exists."
@@ -682,7 +571,6 @@ def register():
     except sqlite3.OperationalError as e:
 
         if conn:
-
             conn.rollback()
 
         print(
@@ -692,8 +580,7 @@ def register():
 
         return jsonify({
 
-            "success":
-                False,
+            "success": False,
 
             "message":
                 "Database is currently busy. Please try again."
@@ -703,7 +590,6 @@ def register():
     except Exception as e:
 
         if conn:
-
             conn.rollback()
 
         print(
@@ -713,8 +599,7 @@ def register():
 
         return jsonify({
 
-            "success":
-                False,
+            "success": False,
 
             "message":
                 "Registration failed."
@@ -724,7 +609,6 @@ def register():
     finally:
 
         if conn:
-
             conn.close()
 
 
@@ -748,8 +632,7 @@ def login():
 
             return jsonify({
 
-                "success":
-                    False,
+                "success": False,
 
                 "message":
                     "No login data received."
@@ -774,17 +657,12 @@ def login():
 
             return jsonify({
 
-                "success":
-                    False,
+                "success": False,
 
                 "message":
                     "Please enter email and password."
 
             }), 400
-
-        # ----------------------------------------------------
-        # FIND USER
-        # ----------------------------------------------------
 
         conn = get_db()
 
@@ -807,8 +685,7 @@ def login():
 
             return jsonify({
 
-                "success":
-                    False,
+                "success": False,
 
                 "message":
                     "Account not found. Please register first."
@@ -818,12 +695,6 @@ def login():
         user_id = user[0]
 
         stored_password = user[1]
-
-        # ----------------------------------------------------
-        # CHECK PASSWORD
-        # ----------------------------------------------------
-
-        password_valid = False
 
         try:
 
@@ -837,25 +708,19 @@ def login():
         except Exception:
 
             password_valid = (
-                stored_password
-                == password
+                stored_password == password
             )
 
         if not password_valid:
 
             return jsonify({
 
-                "success":
-                    False,
+                "success": False,
 
                 "message":
                     "Incorrect password."
 
             }), 401
-
-        # ----------------------------------------------------
-        # UPGRADE OLD PASSWORD
-        # ----------------------------------------------------
 
         if stored_password == password:
 
@@ -881,8 +746,7 @@ def login():
 
         return jsonify({
 
-            "success":
-                True,
+            "success": True,
 
             "message":
                 "Login successful.",
@@ -898,7 +762,6 @@ def login():
     except Exception as e:
 
         if conn:
-
             conn.rollback()
 
         print(
@@ -908,8 +771,7 @@ def login():
 
         return jsonify({
 
-            "success":
-                False,
+            "success": False,
 
             "message":
                 "Login failed."
@@ -919,7 +781,6 @@ def login():
     finally:
 
         if conn:
-
             conn.close()
 
 
@@ -943,8 +804,7 @@ def predict():
 
             return jsonify({
 
-                "success":
-                    False,
+                "success": False,
 
                 "message":
                     "No prediction data received."
@@ -952,7 +812,7 @@ def predict():
             }), 400
 
         # ====================================================
-        # USER INPUTS
+        # USER INPUT
         # ====================================================
 
         email = str(
@@ -962,9 +822,7 @@ def predict():
             )
         ).strip().lower()
 
-        store = data.get(
-            "store"
-        )
+        store = data.get("store")
 
         department = data.get(
             "department"
@@ -981,62 +839,65 @@ def predict():
 
         markdown_values = [
 
-            data.get(
-                "markdown1",
-                0
-            ) or 0,
+            data.get("markdown1", 0) or 0,
 
-            data.get(
-                "markdown2",
-                0
-            ) or 0,
+            data.get("markdown2", 0) or 0,
 
-            data.get(
-                "markdown3",
-                0
-            ) or 0,
+            data.get("markdown3", 0) or 0,
 
-            data.get(
-                "markdown4",
-                0
-            ) or 0,
+            data.get("markdown4", 0) or 0,
 
-            data.get(
-                "markdown5",
-                0
-            ) or 0
+            data.get("markdown5", 0) or 0
+
         ]
 
         # ====================================================
-        # AUTHENTICATION CHECK
+        # AUTHENTICATION
         # ====================================================
 
         if not email:
 
             return jsonify({
 
-                "success":
-                    False,
+                "success": False,
 
                 "message":
                     "User email is required."
 
             }), 400
 
-        if not user_exists(email):
+        user_found = user_exists(email)
+
+        print(
+            f"AUTH CHECK EMAIL: {email}"
+        )
+
+        print(
+            f"AUTH CHECK RESULT: {user_found}"
+        )
+
+        if not user_found:
+
+            print(
+                "AUTH FAILED"
+            )
 
             return jsonify({
 
-                "success":
-                    False,
+                "success": False,
 
                 "message":
-                    "User account not found. Please login."
+                    "User account not found. "
+                    "Please login again."
 
             }), 401
 
+        print(
+            "AUTH PASSED"
+        )
+
         # ====================================================
-        # STORE / DEPARTMENT VALIDATION
+        # STORE / DEPARTMENT
         # ====================================================
 
         if (
@@ -1046,8 +907,7 @@ def predict():
 
             return jsonify({
 
-                "success":
-                    False,
+                "success": False,
 
                 "message":
                     "Please enter a Store."
@@ -1061,8 +921,7 @@ def predict():
 
             return jsonify({
 
-                "success":
-                    False,
+                "success": False,
 
                 "message":
                     "Please enter a Department."
@@ -1071,13 +930,9 @@ def predict():
 
         try:
 
-            store = int(
-                store
-            )
+            store = int(store)
 
-            department = int(
-                department
-            )
+            department = int(department)
 
         except (
             ValueError,
@@ -1086,11 +941,11 @@ def predict():
 
             return jsonify({
 
-                "success":
-                    False,
+                "success": False,
 
                 "message":
-                    "Store and Department must be valid numbers."
+                    "Store and Department "
+                    "must be valid numbers."
 
             }), 400
 
@@ -1098,8 +953,7 @@ def predict():
 
             return jsonify({
 
-                "success":
-                    False,
+                "success": False,
 
                 "message":
                     "Store must be greater than 0."
@@ -1110,8 +964,7 @@ def predict():
 
             return jsonify({
 
-                "success":
-                    False,
+                "success": False,
 
                 "message":
                     "Department must be greater than 0."
@@ -1119,14 +972,12 @@ def predict():
             }), 400
 
         # ====================================================
-        # HOLIDAY VALIDATION
+        # HOLIDAY
         # ====================================================
 
         try:
 
-            holiday = int(
-                holiday
-            )
+            holiday = int(holiday)
 
         except (
             ValueError,
@@ -1135,8 +986,7 @@ def predict():
 
             return jsonify({
 
-                "success":
-                    False,
+                "success": False,
 
                 "message":
                     "Holiday must be either 0 or 1."
@@ -1147,8 +997,7 @@ def predict():
 
             return jsonify({
 
-                "success":
-                    False,
+                "success": False,
 
                 "message":
                     "Holiday must be either No or Yes."
@@ -1156,18 +1005,14 @@ def predict():
             }), 400
 
         # ====================================================
-        # MARKDOWN VALIDATION
+        # MARKDOWNS
         # ====================================================
 
         try:
 
             markdown_values = [
-
                 float(value)
-
-                for value
-                in markdown_values
-
+                for value in markdown_values
             ]
 
         except (
@@ -1177,8 +1022,7 @@ def predict():
 
             return jsonify({
 
-                "success":
-                    False,
+                "success": False,
 
                 "message":
                     "Markdown values must be valid numbers."
@@ -1192,8 +1036,7 @@ def predict():
 
             return jsonify({
 
-                "success":
-                    False,
+                "success": False,
 
                 "message":
                     "Markdown values cannot be negative."
@@ -1209,15 +1052,14 @@ def predict():
         ) = markdown_values
 
         # ====================================================
-        # DATE VALIDATION
+        # DATE
         # ====================================================
 
         if not prediction_date:
 
             return jsonify({
 
-                "success":
-                    False,
+                "success": False,
 
                 "message":
                     "Please select a Prediction Date."
@@ -1235,8 +1077,7 @@ def predict():
 
             return jsonify({
 
-                "success":
-                    False,
+                "success": False,
 
                 "message":
                     "Please provide a valid prediction date."
@@ -1271,24 +1112,18 @@ def predict():
 
             return jsonify({
 
-                "success":
-                    False,
+                "success": False,
 
                 "message":
                     "ML model is not available."
 
             }), 500
 
-        # ====================================================
-        # HISTORICAL DATA CHECK
-        # ====================================================
-
         if sales_data.empty:
 
             return jsonify({
 
-                "success":
-                    False,
+                "success": False,
 
                 "message":
                     "Historical sales data is not available."
@@ -1311,8 +1146,7 @@ def predict():
 
             return jsonify({
 
-                "success":
-                    False,
+                "success": False,
 
                 "message":
                     "No historical sales data found "
@@ -1337,14 +1171,10 @@ def predict():
                 bool(holiday),
 
             "Temperature":
-                historical_features[
-                    "Temperature"
-                ],
+                historical_features["Temperature"],
 
             "Fuel_Price":
-                historical_features[
-                    "Fuel_Price"
-                ],
+                historical_features["Fuel_Price"],
 
             "MarkDown1":
                 markdown1,
@@ -1362,24 +1192,16 @@ def predict():
                 markdown5,
 
             "CPI":
-                historical_features[
-                    "CPI"
-                ],
+                historical_features["CPI"],
 
             "Unemployment":
-                historical_features[
-                    "Unemployment"
-                ],
+                historical_features["Unemployment"],
 
             "Type":
-                historical_features[
-                    "Type"
-                ],
+                historical_features["Type"],
 
             "Size":
-                historical_features[
-                    "Size"
-                ],
+                historical_features["Size"],
 
             "Year":
                 year,
@@ -1394,54 +1216,47 @@ def predict():
                 quarter,
 
             "Lag_1":
-                historical_features[
-                    "Lag_1"
-                ],
+                historical_features["Lag_1"],
 
             "Lag_2":
-                historical_features[
-                    "Lag_2"
-                ],
+                historical_features["Lag_2"],
 
             "Lag_4":
-                historical_features[
-                    "Lag_4"
-                ],
+                historical_features["Lag_4"],
 
             "Rolling_Mean_4":
-                historical_features[
-                    "Rolling_Mean_4"
-                ],
+                historical_features["Rolling_Mean_4"],
 
             "Rolling_Mean_8":
-                historical_features[
-                    "Rolling_Mean_8"
-                ]
+                historical_features["Rolling_Mean_8"]
+
         }
 
         # ====================================================
-        # CREATE DATAFRAME
+        # PREDICT
         # ====================================================
 
         input_df = pd.DataFrame([
             prediction_input
         ])
 
-        # ====================================================
-        # MODEL PREDICTION
-        # ====================================================
+        print(
+            "Prediction input:"
+        )
+
+        print(
+            input_df.to_dict(
+                orient="records"
+            )[0]
+        )
 
         prediction = model.predict(
             input_df
         )
 
-        predicted_sales = float(
-            prediction[0]
-        )
-
         predicted_sales = max(
             0.0,
-            predicted_sales
+            float(prediction[0])
         )
 
         # ====================================================
@@ -1485,14 +1300,9 @@ def predict():
             f"₹{predicted_sales:,.2f}"
         )
 
-        # ====================================================
-        # RESPONSE
-        # ====================================================
-
         return jsonify({
 
-            "success":
-                True,
+            "success": True,
 
             "message":
                 "Sales prediction generated successfully.",
@@ -1502,72 +1312,47 @@ def predict():
 
             "calculated_features": {
 
-                "Year":
-                    year,
+                "Year": year,
 
-                "Month":
-                    month,
+                "Month": month,
 
-                "Week":
-                    week,
+                "Week": week,
 
-                "Quarter":
-                    quarter,
+                "Quarter": quarter,
 
                 "Lag_1":
-                    historical_features[
-                        "Lag_1"
-                    ],
+                    historical_features["Lag_1"],
 
                 "Lag_2":
-                    historical_features[
-                        "Lag_2"
-                    ],
+                    historical_features["Lag_2"],
 
                 "Lag_4":
-                    historical_features[
-                        "Lag_4"
-                    ],
+                    historical_features["Lag_4"],
 
                 "Rolling_Mean_4":
-                    historical_features[
-                        "Rolling_Mean_4"
-                    ],
+                    historical_features["Rolling_Mean_4"],
 
                 "Rolling_Mean_8":
-                    historical_features[
-                        "Rolling_Mean_8"
-                    ],
+                    historical_features["Rolling_Mean_8"],
 
                 "Temperature":
-                    historical_features[
-                        "Temperature"
-                    ],
+                    historical_features["Temperature"],
 
                 "Fuel_Price":
-                    historical_features[
-                        "Fuel_Price"
-                    ],
+                    historical_features["Fuel_Price"],
 
                 "CPI":
-                    historical_features[
-                        "CPI"
-                    ],
+                    historical_features["CPI"],
 
                 "Unemployment":
-                    historical_features[
-                        "Unemployment"
-                    ],
+                    historical_features["Unemployment"],
 
                 "Type":
-                    historical_features[
-                        "Type"
-                    ],
+                    historical_features["Type"],
 
                 "Size":
-                    historical_features[
-                        "Size"
-                    ]
+                    historical_features["Size"]
+
             }
 
         })
@@ -1575,7 +1360,6 @@ def predict():
     except sqlite3.OperationalError as e:
 
         if conn:
-
             conn.rollback()
 
         print(
@@ -1585,39 +1369,36 @@ def predict():
 
         return jsonify({
 
-            "success":
-                False,
+            "success": False,
 
             "message":
-                "Database is currently busy. Please try again."
+                "Database is currently busy. "
+                "Please try again."
 
         }), 503
 
     except Exception as e:
 
         if conn:
-
             conn.rollback()
 
         print(
             "Prediction error:",
-            e
+            repr(e)
         )
 
         return jsonify({
 
-            "success":
-                False,
+            "success": False,
 
             "message":
-                "Prediction failed. Please check the server logs."
+                f"Prediction failed: {str(e)}"
 
         }), 500
 
     finally:
 
         if conn:
-
             conn.close()
 
 
@@ -1637,8 +1418,7 @@ def model_metrics_api():
 
             return jsonify({
 
-                "success":
-                    False,
+                "success": False,
 
                 "message":
                     "Model metrics are not available."
@@ -1647,8 +1427,7 @@ def model_metrics_api():
 
         return jsonify({
 
-            "success":
-                True,
+            "success": True,
 
             "best_model":
                 model_metrics.get(
@@ -1656,19 +1435,13 @@ def model_metrics_api():
                 ),
 
             "r2":
-                model_metrics.get(
-                    "R2"
-                ),
+                model_metrics.get("R2"),
 
             "mae":
-                model_metrics.get(
-                    "MAE"
-                ),
+                model_metrics.get("MAE"),
 
             "rmse":
-                model_metrics.get(
-                    "RMSE"
-                ),
+                model_metrics.get("RMSE"),
 
             "models_compared":
                 model_metrics.get(
@@ -1701,8 +1474,7 @@ def model_metrics_api():
 
         return jsonify({
 
-            "success":
-                False,
+            "success": False,
 
             "message":
                 "Unable to load model metrics."
@@ -1722,35 +1494,22 @@ def sales_trend():
 
     try:
 
-        # ----------------------------------------------------
-        # Check file
-        # ----------------------------------------------------
-
         if not os.path.exists(
             SALES_TREND_PATH
         ):
 
             return jsonify({
 
-                "success":
-                    False,
+                "success": False,
 
                 "message":
                     "Sales trend data is not available."
 
             }), 404
 
-        # ----------------------------------------------------
-        # Load tiny trend dataset
-        # ----------------------------------------------------
-
         df = pd.read_csv(
             SALES_TREND_PATH
         )
-
-        # ----------------------------------------------------
-        # Convert date
-        # ----------------------------------------------------
 
         df["Date"] = pd.to_datetime(
             df["Date"]
@@ -1759,10 +1518,6 @@ def sales_trend():
         df = df.sort_values(
             "Date"
         )
-
-        # ----------------------------------------------------
-        # Return data
-        # ----------------------------------------------------
 
         sales_data_response = []
 
@@ -1776,16 +1531,13 @@ def sales_trend():
                     ),
 
                 "sales":
-                    float(
-                        row["Sales"]
-                    )
+                    float(row["Sales"])
 
             })
 
         return jsonify({
 
-            "success":
-                True,
+            "success": True,
 
             "sales":
                 sales_data_response
@@ -1801,8 +1553,7 @@ def sales_trend():
 
         return jsonify({
 
-            "success":
-                False,
+            "success": False,
 
             "message":
                 str(e)
@@ -1835,8 +1586,7 @@ def history():
 
             return jsonify({
 
-                "success":
-                    False,
+                "success": False,
 
                 "message":
                     "User email is required."
@@ -1874,8 +1624,7 @@ def history():
 
         return jsonify({
 
-            "success":
-                True,
+            "success": True,
 
             "predictions":
                 predictions
@@ -1891,8 +1640,7 @@ def history():
 
         return jsonify({
 
-            "success":
-                False,
+            "success": False,
 
             "message":
                 "Unable to load prediction history."
@@ -1902,7 +1650,6 @@ def history():
     finally:
 
         if conn:
-
             conn.close()
 
 
@@ -1931,8 +1678,7 @@ def dashboard():
 
             return jsonify({
 
-                "success":
-                    False,
+                "success": False,
 
                 "message":
                     "User email is required."
@@ -1942,10 +1688,6 @@ def dashboard():
         conn = get_db()
 
         cursor = conn.cursor()
-
-        # ----------------------------------------------------
-        # TOTAL PREDICTIONS
-        # ----------------------------------------------------
 
         cursor.execute(
             """
@@ -1960,10 +1702,6 @@ def dashboard():
             cursor.fetchone()[0]
         )
 
-        # ----------------------------------------------------
-        # AVERAGE SALES
-        # ----------------------------------------------------
-
         cursor.execute(
             """
             SELECT AVG(predicted_sales)
@@ -1974,13 +1712,8 @@ def dashboard():
         )
 
         average_sales = (
-            cursor.fetchone()[0]
-            or 0
+            cursor.fetchone()[0] or 0
         )
-
-        # ----------------------------------------------------
-        # HIGHEST PREDICTION
-        # ----------------------------------------------------
 
         cursor.execute(
             """
@@ -1992,13 +1725,8 @@ def dashboard():
         )
 
         highest_sales = (
-            cursor.fetchone()[0]
-            or 0
+            cursor.fetchone()[0] or 0
         )
-
-        # ----------------------------------------------------
-        # LATEST PREDICTION
-        # ----------------------------------------------------
 
         cursor.execute(
             """
@@ -2018,10 +1746,6 @@ def dashboard():
         )
 
         latest = cursor.fetchone()
-
-        # ----------------------------------------------------
-        # FORMAT LATEST
-        # ----------------------------------------------------
 
         latest_prediction = None
 
@@ -2049,14 +1773,9 @@ def dashboard():
 
             }
 
-        # ----------------------------------------------------
-        # RESPONSE
-        # ----------------------------------------------------
-
         return jsonify({
 
-            "success":
-                True,
+            "success": True,
 
             "total_predictions":
                 total_predictions,
@@ -2081,8 +1800,7 @@ def dashboard():
 
         return jsonify({
 
-            "success":
-                False,
+            "success": False,
 
             "message":
                 "Unable to load dashboard."
@@ -2092,7 +1810,6 @@ def dashboard():
     finally:
 
         if conn:
-
             conn.close()
 
 
@@ -2103,31 +1820,12 @@ def dashboard():
 if __name__ == "__main__":
 
     print()
-
-    print(
-        "============================================"
-    )
-
-    print(
-        "     SALES PREDICTION SYSTEM"
-    )
-
-    print(
-        "============================================"
-    )
-
-    print(
-        "Backend: http://127.0.0.1:5000"
-    )
-
-    print(
-        "Health:  http://127.0.0.1:5000/api/health"
-    )
-
-    print(
-        "============================================"
-    )
-
+    print("============================================")
+    print("     SALES PREDICTION SYSTEM")
+    print("============================================")
+    print("Backend: http://127.0.0.1:5000")
+    print("Health:  http://127.0.0.1:5000/api/health")
+    print("============================================")
     print()
 
     app.run(
