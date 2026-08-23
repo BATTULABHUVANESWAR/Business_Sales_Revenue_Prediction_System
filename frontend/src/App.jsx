@@ -171,7 +171,7 @@ function Home() {
 
               {/* Heading */}
 
-              <h1 className="max-w-3xl text-5xl font-bold leading-tight tracking-tight text-slate-900 md:text-6xl">
+              <h1 className="mx-auto max-w-3xl text-center text-5xl font-bold leading-tight tracking-tight text-slate-900 md:text-6xl">
 
                 Predict Your
 
@@ -186,7 +186,7 @@ function Home() {
 
               {/* Description */}
 
-              <p className="mt-6 max-w-xl text-lg leading-8 text-slate-500">
+              <p className="mx-auto mt-6 max-w-2xl text-center text-lg leading-8 text-slate-500">
 
                 Turn historical sales data into meaningful
                 predictions and make smarter business
@@ -197,7 +197,7 @@ function Home() {
 
               {/* Buttons */}
 
-              <div className="mt-8 flex flex-wrap gap-4">
+              <div className="mt-8 flex flex-wrap justify-center gap-4">
 
                 <a
                   href="#predict"
