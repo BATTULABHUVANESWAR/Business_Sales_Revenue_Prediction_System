@@ -21,7 +21,7 @@ export default function Login() {
         sessionStorage.setItem("isLoggedIn", "true");
         sessionStorage.setItem("userEmail", email);
 
-        navigate("/dashboard");
+        navigate("/");
       } else {
         alert(result.message);
       }
