@@ -29,7 +29,7 @@ export default function Login() {
       console.error("Login error:", error);
 
       alert(
-        "Unable to connect to the Flask server. Please make sure the backend is running."
+        "Unable to connect to the server. Please try again in later."
       );
     } finally {
       setLoading(false);
