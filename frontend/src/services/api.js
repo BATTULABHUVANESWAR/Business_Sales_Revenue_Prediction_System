@@ -1,5 +1,5 @@
 const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "https://business-sales-revenue-prediction-system-tnhx.onrender.com";
+  import.meta.env.VITE_API_URL = "http://127.0.0.1:5000" || "https://business-sales-revenue-prediction-system-tnhx.onrender.com";
 
 async function handleResponse(response) {
   if (!response.ok) {
@@ -91,9 +91,25 @@ export async function getModelMetrics() {
 }
 
 
+export async function getModelComparison() {
+  const response = await fetch(
+    `${API_BASE_URL}/api/model-comparison`
+  );
+
+  return handleResponse(response);
+}
+
 export async function getSalesTrend() {
   const response = await fetch(
     `${API_BASE_URL}/api/sales-trend`
+  );
+
+  return handleResponse(response);
+}
+
+export async function getPerformance(email) {
+  const response = await fetch(
+    `${API_BASE_URL}/api/performance?email=${encodeURIComponent(email)}`
   );
 
   return handleResponse(response);

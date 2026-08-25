@@ -44,6 +44,18 @@ METRICS_PATH = os.path.join(
     "model_metrics.joblib"
 )
 
+ALL_METRICS_PATH = os.path.join(
+    BASE_DIR,
+    "model",
+    "all_model_metrics.joblib"
+)
+
+ANN_METRICS_PATH = os.path.join(
+    BASE_DIR,
+    "model",
+    "ann_metrics.joblib"
+)
+
 HISTORICAL_DATA_PATH = os.path.join(
     BASE_DIR,
     "data",
@@ -85,6 +97,35 @@ except Exception as e:
     print(e)
     model_metrics = {}
 
+try:
+    all_model_metrics = joblib.load(
+        ALL_METRICS_PATH
+    )
+
+except Exception as e:
+
+    print(
+        "Could not load all model metrics:",
+        e
+    )
+
+    all_model_metrics = {}
+
+
+
+try:
+    ann_metrics = joblib.load(
+        ANN_METRICS_PATH
+    )
+
+except Exception as e:
+
+    print(
+        "Could not load ANN metrics:",
+        e
+    )
+
+    ann_metrics = None
 
 # ============================================================
 # LOAD HISTORICAL DATA
@@ -1482,6 +1523,117 @@ def model_metrics_api():
         }), 500
 
 
+@app.route(
+    "/api/model-comparison",
+    methods=["GET"]
+)
+def model_comparison():
+
+    try:
+
+        results = []
+
+        # ====================================================
+        # TRADITIONAL ML MODELS
+        # ====================================================
+
+        for model_name, metrics in all_model_metrics.items():
+
+            results.append({
+
+                "model": model_name,
+
+                "MAE": float(
+                    metrics["MAE"]
+                ),
+
+                "RMSE": float(
+                    metrics["RMSE"]
+                ),
+
+                "R2": float(
+                    metrics["R2"]
+                )
+
+            })
+
+
+        # ====================================================
+        # ANN
+        # ====================================================
+
+        if ann_metrics:
+
+            results.append({
+
+                "model": "ANN",
+
+                "MAE": float(
+                    ann_metrics["MAE"]
+                ),
+
+                "RMSE": float(
+                    ann_metrics["RMSE"]
+                ),
+
+                "R2": float(
+                    ann_metrics["R2"]
+                )
+
+            })
+
+
+        # ====================================================
+        # SORT BY R²
+        # ====================================================
+
+        results.sort(
+            key=lambda x: x["R2"],
+            reverse=True
+        )
+
+
+        # ====================================================
+        # BEST MODEL
+        # ====================================================
+
+        best_model = (
+            results[0]["model"]
+            if results
+            else None
+        )
+
+
+        return jsonify({
+
+            "success": True,
+
+            "best_model":
+                best_model,
+
+            "models":
+                results
+
+        })
+
+
+    except Exception as e:
+
+        print(
+            "Model comparison error:",
+            e
+        )
+
+        return jsonify({
+
+            "success": False,
+
+            "message":
+                "Unable to load model comparison."
+
+        }), 500
+
+
 # ============================================================
 # SALES TREND API
 # ============================================================
@@ -1812,6 +1964,182 @@ def dashboard():
         if conn:
             conn.close()
 
+
+@app.route(
+    "/api/performance",
+    methods=["GET"]
+)
+def performance():
+
+    conn = None
+
+    try:
+
+        email = str(
+            request.args.get(
+                "email",
+                ""
+            )
+        ).strip().lower()
+
+        if not email:
+
+            return jsonify({
+
+                "success": False,
+
+                "message":
+                    "User email is required."
+
+            }), 400
+
+        conn = get_db()
+
+        cursor = conn.cursor()
+
+        # ==================================================
+        # STORE PERFORMANCE
+        # ==================================================
+
+        cursor.execute(
+            """
+            SELECT
+                store,
+                COUNT(*) AS prediction_count,
+                AVG(predicted_sales) AS average_sales,
+                SUM(predicted_sales) AS total_sales,
+                MAX(predicted_sales) AS highest_sales
+            FROM predictions
+            WHERE email = ?
+            GROUP BY store
+            ORDER BY total_sales DESC
+            """,
+            (email,)
+        )
+
+        store_rows = cursor.fetchall()
+
+        stores = []
+
+        for row in store_rows:
+
+            stores.append({
+
+                "store":
+                    row[0],
+
+                "prediction_count":
+                    row[1],
+
+                "average_sales":
+                    float(
+                        row[2] or 0
+                    ),
+
+                "total_sales":
+                    float(
+                        row[3] or 0
+                    ),
+
+                "highest_sales":
+                    float(
+                        row[4] or 0
+                    )
+
+            })
+
+
+        # ==================================================
+        # DEPARTMENT PERFORMANCE
+        # ==================================================
+
+        cursor.execute(
+            """
+            SELECT
+                department,
+                COUNT(*) AS prediction_count,
+                AVG(predicted_sales) AS average_sales,
+                SUM(predicted_sales) AS total_sales,
+                MAX(predicted_sales) AS highest_sales
+            FROM predictions
+            WHERE email = ?
+            GROUP BY department
+            ORDER BY total_sales DESC
+            """,
+            (email,)
+        )
+
+        department_rows = cursor.fetchall()
+
+        departments = []
+
+        for row in department_rows:
+
+            departments.append({
+
+                "department":
+                    row[0],
+
+                "prediction_count":
+                    row[1],
+
+                "average_sales":
+                    float(
+                        row[2] or 0
+                    ),
+
+                "total_sales":
+                    float(
+                        row[3] or 0
+                    ),
+
+                "highest_sales":
+                    float(
+                        row[4] or 0
+                    )
+
+            })
+
+
+        # ==================================================
+        # RESPONSE
+        # ==================================================
+
+        return jsonify({
+
+            "success": True,
+
+            "stores":
+                stores,
+
+            "departments":
+                departments
+
+        })
+
+
+    except Exception as e:
+
+        print(
+            "Performance error:",
+            e
+        )
+
+        return jsonify({
+
+            "success": False,
+
+            "message":
+                "Unable to load performance data."
+
+        }), 500
+
+
+    finally:
+
+        if conn:
+
+            conn.close()
 
 # ============================================================
 # RUN

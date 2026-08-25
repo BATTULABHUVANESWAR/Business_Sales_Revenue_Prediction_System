@@ -138,8 +138,10 @@ models = {
     "Linear Regression": LinearRegression(),
 
     "Random Forest": RandomForestRegressor(
-        n_estimators=100,
-        random_state=42,
+        n_estimators=50,
+        max_depth=20,
+        min_samples_leaf=2,
+       random_state=42,
         n_jobs=-1
     ),
 
@@ -147,6 +149,9 @@ models = {
         n_estimators=100,
         learning_rate=0.1,
         max_depth=6,
+        min_child_weight=2,
+        subsample=0.8,
+        colsample_bytree=0.8,
         random_state=42,
         n_jobs=-1
     )
@@ -200,6 +205,25 @@ results_df = pd.DataFrame(results).T
 
 print("\n================ MODEL PERFORMANCE ================\n")
 print(results_df)
+
+
+# ============================================================
+# SAVE ALL MODEL COMPARISON METRICS
+# ============================================================
+
+all_model_metrics = results_df.to_dict(
+    orient="index"
+)
+
+joblib.dump(
+    all_model_metrics,
+    "all_model_metrics.joblib"
+)
+
+print(
+    "\nAll model comparison metrics saved as: "
+    "all_model_metrics.joblib"
+)
 
 
 # ============================================================

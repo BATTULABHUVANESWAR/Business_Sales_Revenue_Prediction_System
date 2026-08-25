@@ -46,7 +46,6 @@ export default function Dashboard() {
         return;
       }
 
-
       try {
 
         const [
@@ -209,10 +208,15 @@ export default function Dashboard() {
   const chartData = [...history]
     .reverse()
     .slice(-10)
-    .map((item) => ({
+    .map((item, index) => ({
 
+      // Unique X-axis value
+      prediction: `P${index + 1}`,
+
+      // Actual prediction date
       date: item.prediction_date,
 
+      // Actual predicted sales
       sales: Number(
         item.predicted_sales
       ),
@@ -394,13 +398,12 @@ export default function Dashboard() {
                   {/* X AXIS */}
 
                   <XAxis
-                    dataKey="date"
+                    dataKey="prediction"
                     tick={{
                       fontSize: 11,
                     }}
                     tickLine={false}
                     axisLine={false}
-                    minTickGap={25}
                   />
 
 
@@ -424,19 +427,46 @@ export default function Dashboard() {
                   {/* TOOLTIP */}
 
                   <Tooltip
-                    formatter={(value) =>
-                      formatCurrency(value)
-                    }
+                    content={({
+                      active,
+                      payload,
+                    }) => {
 
-                    labelFormatter={(label) =>
-                      `Date: ${label}`
-                    }
+                      if (
+                        !active ||
+                        !payload ||
+                        payload.length === 0
+                      ) {
 
-                    contentStyle={{
-                      borderRadius: "12px",
-                      border: "1px solid #e2e8f0",
-                      boxShadow:
-                        "0 10px 25px rgba(15, 23, 42, 0.08)",
+                        return null;
+
+                      }
+
+                      const point =
+                        payload[0].payload;
+
+                      return (
+
+                        <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-lg">
+
+                          <p className="text-xs font-medium text-slate-400">
+                            {point.prediction}
+                          </p>
+
+                          <p className="mt-1 text-sm text-slate-500">
+                            Date: {point.date}
+                          </p>
+
+                          <p className="mt-1 text-sm font-semibold text-blue-600">
+                            Sales: {formatCurrency(
+                              point.sales
+                            )}
+                          </p>
+
+                        </div>
+
+                      );
+
                     }}
                   />
 
@@ -495,7 +525,6 @@ export default function Dashboard() {
         <div className="mt-6 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:mt-8 sm:p-8">
 
           <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
-
 
             <div>
 
@@ -631,6 +660,21 @@ export default function Dashboard() {
           </Link>
 
         </div>
+
+        {/* ==================================================
+          BACK TO HOME
+          ================================================== */}
+
+          <div className="mt-8 flex justify-center">
+
+            <Link
+              to="/"
+              className="rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-blue-200 hover:text-blue-600"
+            >
+                ← Back to Home
+            </Link>
+
+          </div>
 
       </div>
 
