@@ -1,5 +1,5 @@
 const API_BASE_URL =
-  import.meta.env.VITE_API_URL = "http://127.0.0.1:5000" || "https://business-sales-revenue-prediction-system-tnhx.onrender.com";
+  import.meta.env.VITE_API_URL || "https://business-sales-revenue-prediction-system-tnhx.onrender.com";
 
 async function handleResponse(response) {
   if (!response.ok) {
