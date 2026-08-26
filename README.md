@@ -104,6 +104,7 @@ The system compares:
 1. Linear Regression
 2. Random Forest Regressor
 3. XGBoost Regressor
+4. Artificial Neural Network
 
 The models are evaluated using:
 
