@@ -46,7 +46,7 @@ init_db()
 
 @app.route("/")
 def home():
-    return send_from_directory(FRONTEND_FOLDER, "login.html")
+    return send_from_directory(FRONTEND_FOLDER, "index.html")
 
 
 @app.route("/<path:filename>")
